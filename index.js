@@ -45,6 +45,11 @@ app.post('/notify', (req, res) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.send('API Visitor Notifier en ligne !');
+});
+
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
