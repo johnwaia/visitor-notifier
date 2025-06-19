@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 // Autoriser uniquement ton site GitHub Pages
 app.use(cors({
-  origin: 'https://johnwaia.github.io'
+  origin: 'https://johnwaia.github.io/cv_john_waia/'
 }));
 
 app.use(express.json());
