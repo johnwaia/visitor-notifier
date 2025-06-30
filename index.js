@@ -15,16 +15,8 @@ const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 // CORS
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Autorise les requêtes sans origin (ex: Postman)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-}));
+app.use(cors()); // Autorise toutes les origines
+
 
 app.use(express.json());
 
