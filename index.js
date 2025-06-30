@@ -7,7 +7,7 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 const VISITOR_DIR = path.join(__dirname, 'data');
 const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
