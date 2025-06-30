@@ -11,8 +11,17 @@ const PORT = process.env.PORT || 5000;
 const VISITOR_FILE = './visitors.json';
 
 // CORS
+const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: ['https://johnwaia.github.io', 'http://localhost:3000']
+  origin: (origin, callback) => {
+    // Autorise les requêtes sans origin (ex: Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 
 
@@ -46,6 +55,15 @@ app.post('/visit', (req, res) => {
   });
 });
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail', 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+
 // Mail route si tu veux la garder
 app.post('/notify', (req, res) => {
   const mailOptions = {
@@ -67,4 +85,3 @@ app.post('/notify', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
-
