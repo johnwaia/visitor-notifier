@@ -1,14 +1,16 @@
-
 require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const VISITOR_FILE = '/tmp/visitors.json';
+
+const VISITOR_DIR = path.join(__dirname, 'data'); 
+const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 
 // CORS
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
@@ -26,6 +28,12 @@ app.use(cors({
 
 app.use(express.json());
 
+// Crée le dossier data s'il n'existe pas
+if (!fs.existsSync(VISITOR_DIR)) {
+  fs.mkdirSync(VISITOR_DIR, { recursive: true });
+}
+
+// Crée le fichier visitors.json s'il n'existe pas
 if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
@@ -58,7 +66,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS
   }
 });
-
 
 // Mail route si tu veux la garder
 app.post('/notify', (req, res) => {
