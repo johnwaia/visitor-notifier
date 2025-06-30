@@ -1,4 +1,4 @@
-// backend/index.js
+
 require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
@@ -16,7 +16,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Initialiser le fichier de visiteurs si inexistant
 if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
@@ -60,6 +59,7 @@ app.post('/notify', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Serveur lancé sur http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
+
