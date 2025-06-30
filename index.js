@@ -1,31 +1,48 @@
 // backend/index.js
-require('dotenv').config(); // Charge les variables d'environnement
-
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+
 const app = express();
-
-// Railway fournit automatiquement un port via process.env.PORT
 const PORT = process.env.PORT || 5000;
+const VISITOR_FILE = './visitors.json';
 
-// Autoriser uniquement ton site GitHub Pages
+// CORS
 app.use(cors({
-  origin: 'https://johnwaia.github.io/cv_john_waia/'
+  origin: 'https://johnwaia.github.io' // Pas de sous-dossier ici
 }));
-
 app.use(express.json());
 
-// Transporteur Nodemailer avec variables d'environnement
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+// Initialiser le fichier de visiteurs si inexistant
+if (!fs.existsSync(VISITOR_FILE)) {
+  fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
+}
+
+// Route POST pour enregistrer un visiteur
+app.post('/visit', (req, res) => {
+  const { sessionId } = req.body;
+
+  let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
+
+  let isNew = false;
+
+  if (!visitors.includes(sessionId)) {
+    visitors.push(sessionId);
+    fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
+    isNew = true;
   }
+
+  res.json({
+    totalVisitors: visitors.length,
+    rank: visitors.indexOf(sessionId) + 1,
+    isNewVisitor: isNew
+  });
 });
 
-// Route POST pour notifier un email
+// Mail route si tu veux la garder
 app.post('/notify', (req, res) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -37,20 +54,12 @@ app.post('/notify', (req, res) => {
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error('Erreur Nodemailer:', error);
-      res.status(500).send('Erreur lors de l\'envoi de l\'email');
-    } else {
-      console.log('Email envoyé :', info.response);
-      res.send('Email envoyé');
+      return res.status(500).send('Erreur lors de l\'envoi');
     }
+    res.send('Email envoyé');
   });
 });
 
-app.get('/', (req, res) => {
-  res.send('API Visitor Notifier en ligne !');
-});
-
-
-// Démarrer le serveur
 app.listen(PORT, () => {
-  console.log(`Serveur backend lancé sur le port ${PORT}`);
+  console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
