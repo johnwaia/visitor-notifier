@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
@@ -9,11 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const VISITOR_FILE = './visitors.json';
 
-// 🎯 CORS sécurisé avec plusieurs origines autorisées
+// CORS
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Autorise les requêtes sans origin (ex: Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -22,28 +24,16 @@ app.use(cors({
   }
 }));
 
-// ✅ Fix de l'erreur path-to-regexp (ne pas utiliser "*", mais "/*")
-app.options('/*', cors());
-
 app.use(express.json());
 
-// 📁 Init fichier visiteurs si non présent
 if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
 
-// 📩 Config Nodemailer
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// 📌 Route pour enregistrer une visite
+// Route POST pour enregistrer un visiteur
 app.post('/visit', (req, res) => {
   const { sessionId } = req.body;
+
   let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
 
   let isNew = false;
@@ -61,7 +51,16 @@ app.post('/visit', (req, res) => {
   });
 });
 
-// 📧 Route d'envoi de notification par email
+const transporter = nodemailer.createTransport({
+  service: 'gmail', 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+
+// Mail route si tu veux la garder
 app.post('/notify', (req, res) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -79,7 +78,6 @@ app.post('/notify', (req, res) => {
   });
 });
 
-// 🚀 Démarrage du serveur
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Serveur backend lancé sur le port ${PORT}`);
+  console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
