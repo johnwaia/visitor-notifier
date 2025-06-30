@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const VISITOR_FILE = './visitors.json';
+const VISITOR_FILE = '/tmp/visitors.json';
 
 // CORS
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
