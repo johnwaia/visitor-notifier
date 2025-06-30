@@ -4,68 +4,51 @@ const nodemailer = require('nodemailer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const VISITOR_DIR = path.join(__dirname, 'data'); 
-const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
+let visitors = []; // Stocké en mémoire
 
-// CORS
-const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
-
-app.use(cors()); // Autorise toutes les origines
-
-
+app.use(cors()); // CORS ouvert
 app.use(express.json());
-
-// Crée le dossier data s'il n'existe pas
-if (!fs.existsSync(VISITOR_DIR)) {
-  fs.mkdirSync(VISITOR_DIR, { recursive: true });
-}
-
-// Crée le fichier visitors.json s'il n'existe pas
-if (!fs.existsSync(VISITOR_FILE)) {
-  fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
-}
 
 // Route POST pour enregistrer un visiteur
 app.post('/visit', (req, res) => {
-  const { sessionId } = req.body;
+  const { sessionId } = req.body || {};
 
-  let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
+  // Fallback si frontend n’envoie pas de sessionId
+  const sid = sessionId || `anonymous-${Date.now()}`;
 
   let isNew = false;
 
-  if (!visitors.includes(sessionId)) {
-    visitors.push(sessionId);
-    fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
+  if (!visitors.includes(sid)) {
+    visitors.push(sid);
     isNew = true;
   }
 
   res.json({
     totalVisitors: visitors.length,
-    rank: visitors.indexOf(sessionId) + 1,
+    rank: visitors.indexOf(sid) + 1,
     isNewVisitor: isNew
   });
 });
 
+// (Optionnel) route email
 const transporter = nodemailer.createTransport({
-  service: 'gmail', 
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
 });
 
-// Mail route si tu veux la garder
 app.post('/notify', (req, res) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: process.env.EMAIL_USER,
     subject: 'Nouveau visiteur sur le site',
-    text: `Un utilisateur a consulté votre site à ${new Date().toLocaleString()}`
+    text: `Un utilisateur a visité le site à ${new Date().toLocaleString()}`
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
@@ -78,5 +61,5 @@ app.post('/notify', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Serveur backend lancé sur le port ${PORT}`);
+  console.log(`✅ Serveur backend lancé sur le port ${PORT}`);
 });
