@@ -25,7 +25,7 @@ app.use(cors({
 }));
 
 
-app.options('*', cors()); // Permet les requêtes OPTIONS pour toutes les routes
+app.options('/*', cors());
 
 
 app.use(express.json());
