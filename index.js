@@ -12,8 +12,13 @@ const VISITOR_FILE = './visitors.json';
 
 // CORS
 app.use(cors({
-  origin: 'https://johnwaia.github.io' // Pas de sous-dossier ici
+  origin: ['https://johnwaia.github.io', 'http://localhost:3000']
 }));
+
+
+app.options('*', cors()); // Permet les requêtes OPTIONS pour toutes les routes
+
+
 app.use(express.json());
 
 if (!fs.existsSync(VISITOR_FILE)) {
