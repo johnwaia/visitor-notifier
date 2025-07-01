@@ -15,7 +15,7 @@ const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 // ✅ Liste des origines autorisées
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
-// ✅ Configuration CORS robuste
+// ✅ Configuration CORS globale et robuste
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -30,20 +30,10 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Catch-all OPTIONS fallback (pour Railway / navigateurs stricts)
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-  } else {
-    next();
-  }
-});
-
-
-// ✅ Support JSON
+// ✅ Middleware JSON
 app.use(express.json());
 
-// ✅ Crée data/visitors.json si inexistant
+// ✅ Création du fichier de visiteurs si inexistant
 if (!fs.existsSync(VISITOR_DIR)) {
   fs.mkdirSync(VISITOR_DIR, { recursive: true });
 }
@@ -51,7 +41,7 @@ if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
 
-// ✅ Route pour notifier une visite
+// ✅ Route pour enregistrer une visite
 app.post('/visit', (req, res) => {
   const { sessionId } = req.body;
 
@@ -75,7 +65,7 @@ app.post('/visit', (req, res) => {
   });
 });
 
-// ✅ Route email (facultatif)
+// ✅ Route email facultative
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -101,7 +91,16 @@ app.post('/notify', (req, res) => {
   });
 });
 
-// ✅ Lancement
+// ✅ Réponse aux requêtes OPTIONS génériques (Railway fix)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+  } else {
+    next();
+  }
+});
+
+// ✅ Lancement du serveur
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
