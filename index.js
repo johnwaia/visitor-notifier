@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
@@ -23,7 +22,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(204); // Réponse rapide au preflight
+    return res.sendStatus(204);
   }
 
   next();
@@ -42,53 +41,31 @@ if (!fs.existsSync(VISITOR_FILE)) {
 
 // Route POST /visit
 app.post('/visit', (req, res) => {
-  const { sessionId } = req.body;
+  try {
+    const { sessionId } = req.body;
 
-  if (!sessionId) {
-    return res.status(400).json({ error: 'sessionId is required' });
-  }
-
-  let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
-
-  let isNew = false;
-  if (!visitors.includes(sessionId)) {
-    visitors.push(sessionId);
-    fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
-    isNew = true;
-  }
-
-  res.json({
-    totalVisitors: visitors.length,
-    rank: visitors.indexOf(sessionId) + 1,
-    isNewVisitor: isNew
-  });
-});
-
-// Transporteur nodemailer (optionnel)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
-// Route email (optionnel)
-app.post('/notify', (req, res) => {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_USER,
-    subject: 'Nouveau visiteur sur le site',
-    text: `Un utilisateur a visité votre site à ${new Date().toLocaleString()}`
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Erreur Nodemailer:', error);
-      return res.status(500).send('Erreur lors de l\'envoi');
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required' });
     }
-    res.send('Email envoyé');
-  });
+
+    let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
+
+    let isNew = false;
+    if (!visitors.includes(sessionId)) {
+      visitors.push(sessionId);
+      fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
+      isNew = true;
+    }
+
+    res.json({
+      totalVisitors: visitors.length,
+      rank: visitors.indexOf(sessionId) + 1,
+      isNewVisitor: isNew
+    });
+  } catch (err) {
+    console.error('Error /visit:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Démarrage du serveur
