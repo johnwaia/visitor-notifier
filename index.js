@@ -63,8 +63,6 @@ app.post('/visit', (req, res) => {
   });
 });
 
-// ✅ Route OPTIONS globale (facultatif mais sûr)
-app.options('*', cors());
 
 // ✅ Route email (facultatif)
 const transporter = nodemailer.createTransport({
