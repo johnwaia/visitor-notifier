@@ -92,13 +92,19 @@ app.post('/notify', (req, res) => {
 });
 
 // ✅ Réponse aux requêtes OPTIONS génériques (Railway fix)
+// ✅ Réponse rapide aux requêtes OPTIONS (CORS preflight fix)
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-  } else {
-    next();
+    res.set({
+      'Access-Control-Allow-Origin': req.headers.origin || '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    return res.sendStatus(204);
   }
+  next();
 });
+
 
 // ✅ Lancement du serveur
 app.listen(PORT, '0.0.0.0', () => {
