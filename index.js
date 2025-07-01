@@ -9,8 +9,21 @@ const PORT = process.env.PORT || 3000;
 const VISITOR_DIR = path.join(__dirname, 'data');
 const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 
+// Test écriture fichier au démarrage
+try {
+  if (!fs.existsSync(VISITOR_DIR)) {
+    fs.mkdirSync(VISITOR_DIR, { recursive: true });
+  }
+  fs.writeFileSync(path.join(VISITOR_DIR, 'test.txt'), 'test');
+  console.log('Écriture test OK');
+} catch (err) {
+  console.error('Erreur écriture:', err);
+}
+
 // Middleware CORS global pour gérer les preflight OPTIONS
 app.use((req, res, next) => {
+  console.log(`Requête ${req.method} reçue sur ${req.path}`); // log méthode + path
+
   const origin = req.headers.origin;
   const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
@@ -22,6 +35,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
+    console.log('Réponse rapide OPTIONS 204');
     return res.sendStatus(204);
   }
 
@@ -31,13 +45,16 @@ app.use((req, res, next) => {
 // Support JSON
 app.use(express.json());
 
-// Création du dossier et fichier visiteurs si inexistants
-if (!fs.existsSync(VISITOR_DIR)) {
-  fs.mkdirSync(VISITOR_DIR, { recursive: true });
-}
+// Création du fichier visiteurs si inexistant
 if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
+
+// Endpoint test /ping
+app.get('/ping', (req, res) => {
+  console.log('GET /ping reçu');
+  res.send('pong');
+});
 
 // Route POST /visit
 app.post('/visit', (req, res) => {
