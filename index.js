@@ -1,39 +1,38 @@
 require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
-const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 const VISITOR_DIR = path.join(__dirname, 'data');
 const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 
-// ✅ Liste des origines autorisées
-const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
+// Middleware CORS global pour gérer les preflight OPTIONS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
-// ✅ Configuration CORS globale et robuste
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
 
-// ✅ Middleware JSON
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204); // Réponse rapide au preflight
+  }
+
+  next();
+});
+
+// Support JSON
 app.use(express.json());
 
-// ✅ Création du fichier de visiteurs si inexistant
+// Création du dossier et fichier visiteurs si inexistants
 if (!fs.existsSync(VISITOR_DIR)) {
   fs.mkdirSync(VISITOR_DIR, { recursive: true });
 }
@@ -41,7 +40,7 @@ if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
 
-// ✅ Route pour enregistrer une visite
+// Route POST /visit
 app.post('/visit', (req, res) => {
   const { sessionId } = req.body;
 
@@ -65,7 +64,7 @@ app.post('/visit', (req, res) => {
   });
 });
 
-// ✅ Route email facultative
+// Transporteur nodemailer (optionnel)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -74,6 +73,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Route email (optionnel)
 app.post('/notify', (req, res) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -91,22 +91,7 @@ app.post('/notify', (req, res) => {
   });
 });
 
-// ✅ Réponse aux requêtes OPTIONS génériques (Railway fix)
-// ✅ Réponse rapide aux requêtes OPTIONS (CORS preflight fix)
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    res.set({
-      'Access-Control-Allow-Origin': req.headers.origin || '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    });
-    return res.sendStatus(204);
-  }
-  next();
-});
-
-
-// ✅ Lancement du serveur
+// Démarrage du serveur
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
