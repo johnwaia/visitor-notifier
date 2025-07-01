@@ -20,9 +20,9 @@ try {
   console.error('Erreur écriture:', err);
 }
 
-// Middleware CORS global pour gérer les preflight OPTIONS
+// Middleware global CORS + gestion OPTIONS très rapide
 app.use((req, res, next) => {
-  console.log(`Requête ${req.method} reçue sur ${req.path}`); // log méthode + path
+  console.log(`Requête ${req.method} reçue sur ${req.path}`);
 
   const origin = req.headers.origin;
   const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
@@ -86,6 +86,7 @@ app.post('/visit', (req, res) => {
 });
 
 // Démarrage du serveur
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
+  console.log(`PORT env: ${process.env.PORT}`);
 });
