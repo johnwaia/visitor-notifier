@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
-const cors = require('cors'); // toujours utile pour tests locaux
+const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -12,39 +12,34 @@ const PORT = process.env.PORT;
 const VISITOR_DIR = path.join(__dirname, 'data');
 const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 
-// ✅ Liste des domaines autorisés pour les requêtes CORS
+// ✅ Liste des origines autorisées
 const allowedOrigins = ['https://johnwaia.github.io', 'http://localhost:3000'];
 
-// ✅ Middleware personnalisé pour gérer CORS + OPTIONS
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
+// ✅ Configuration CORS robuste
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  }
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
-
+// ✅ Support JSON
 app.use(express.json());
 
-// ✅ Crée le dossier `data` si inexistant
+// ✅ Crée data/visitors.json si inexistant
 if (!fs.existsSync(VISITOR_DIR)) {
   fs.mkdirSync(VISITOR_DIR, { recursive: true });
 }
-
-// ✅ Crée le fichier `visitors.json` si inexistant
 if (!fs.existsSync(VISITOR_FILE)) {
   fs.writeFileSync(VISITOR_FILE, JSON.stringify([]));
 }
 
-// ✅ Route POST /visit
+// ✅ Route pour notifier une visite
 app.post('/visit', (req, res) => {
   const { sessionId } = req.body;
 
@@ -55,7 +50,6 @@ app.post('/visit', (req, res) => {
   let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
 
   let isNew = false;
-
   if (!visitors.includes(sessionId)) {
     visitors.push(sessionId);
     fs.writeFileSync(VISITOR_FILE, JSON.stringify(visitors, null, 2));
@@ -69,7 +63,10 @@ app.post('/visit', (req, res) => {
   });
 });
 
-// ✅ Route pour envoyer un email (facultatif)
+// ✅ Route OPTIONS globale (facultatif mais sûr)
+app.options('*', cors());
+
+// ✅ Route email (facultatif)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -95,7 +92,7 @@ app.post('/notify', (req, res) => {
   });
 });
 
-// ✅ Démarrage du serveur
+// ✅ Lancement
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
