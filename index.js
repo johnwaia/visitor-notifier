@@ -26,7 +26,19 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Catch-all OPTIONS fallback (pour Railway / navigateurs stricts)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+  } else {
+    next();
+  }
+});
+
 
 // ✅ Support JSON
 app.use(express.json());
@@ -62,7 +74,6 @@ app.post('/visit', (req, res) => {
     isNewVisitor: isNew
   });
 });
-
 
 // ✅ Route email (facultatif)
 const transporter = nodemailer.createTransport({
