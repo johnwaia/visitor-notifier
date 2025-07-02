@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch'); // ✅ Ajout de node-fetch pour le ping
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args)); // ✅ Import compatible CommonJS
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const VISITOR_DIR = path.join(__dirname, 'data');
 const VISITOR_FILE = path.join(VISITOR_DIR, 'visitors.json');
 
-// Middleware global CORS + gestion OPTIONS très rapide
+// Middleware global CORS + gestion OPTIONS
 app.use((req, res, next) => {
   console.log(`Requête ${req.method} reçue sur ${req.path}`);
 
@@ -32,10 +32,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Support JSON
 app.use(express.json());
 
-// Création des dossiers/fichiers au démarrage
+// Init fichiers
 try {
   if (!fs.existsSync(VISITOR_DIR)) {
     fs.mkdirSync(VISITOR_DIR, { recursive: true });
@@ -50,10 +49,7 @@ try {
   console.error('Erreur d\'initialisation fichiers:', err);
 }
 
-// Routes
-app.get('/', (req, res) => {
-  res.send('OK');
-});
+app.get('/', (req, res) => res.send('OK'));
 
 app.get('/ping', (req, res) => {
   console.log('GET /ping reçu');
@@ -63,10 +59,7 @@ app.get('/ping', (req, res) => {
 app.post('/visit', (req, res) => {
   try {
     const { sessionId } = req.body;
-
-    if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId is required' });
-    }
+    if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
     let visitors = JSON.parse(fs.readFileSync(VISITOR_FILE, 'utf-8'));
 
@@ -88,14 +81,13 @@ app.post('/visit', (req, res) => {
   }
 });
 
-// Démarrage
 app.listen(PORT, () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
 
-// 🔁 Anti-sommeil Render : ping automatique toutes les 14 minutes
+// 🔁 Ping Render toutes les 14 minutes
 setInterval(() => {
   fetch('https://visitor-notifier.onrender.com/ping')
     .then(res => console.log(`[Ping interne] ${new Date().toISOString()} - ${res.status}`))
     .catch(err => console.error('Erreur de ping interne :', err));
-}, 14 * 60 * 1000); // 14 minutes
+}, 14 * 60 * 1000);
