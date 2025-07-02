@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const fetch = require('node-fetch'); // ✅ Ajout de node-fetch pour le ping
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,18 +50,16 @@ try {
   console.error('Erreur d\'initialisation fichiers:', err);
 }
 
-// 🔁 Endpoint racine requis pour Railway
+// Routes
 app.get('/', (req, res) => {
   res.send('OK');
 });
 
-// Endpoint test
 app.get('/ping', (req, res) => {
   console.log('GET /ping reçu');
   res.send('pong');
 });
 
-// Route POST /visit
 app.post('/visit', (req, res) => {
   try {
     const { sessionId } = req.body;
@@ -93,3 +92,10 @@ app.post('/visit', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Serveur backend lancé sur le port ${PORT}`);
 });
+
+// 🔁 Anti-sommeil Render : ping automatique toutes les 14 minutes
+setInterval(() => {
+  fetch('https://visitor-notifier.onrender.com/ping')
+    .then(res => console.log(`[Ping interne] ${new Date().toISOString()} - ${res.status}`))
+    .catch(err => console.error('Erreur de ping interne :', err));
+}, 14 * 60 * 1000); // 14 minutes
